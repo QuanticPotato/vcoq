@@ -16,16 +16,3 @@
    (_______)    \_______)(__________) \_______)(__\_|_)\___|\____\)  
                                                                      
                                                                      
-Introduction
-============
-
-VCoq is a vim plugin. It provides a user-friendly interface in order to use the Coq Proof Assistant.
-
-
-Installation
-============
-
-This plugin can be used as a bundle, with the [pathogen plugin][1]. Hence, you just have to clone this repository in your bundles directory (by default, it is ~/.vim/bundle) :
-
-	cd ~/.vim/bundle
-	git clone https://github.com/Choups314/vcoq.git
