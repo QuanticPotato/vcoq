@@ -13,7 +13,7 @@
      |:  ____/ |:  |     (:  |  | . ) \/ \      |:  | |: \.   \\  |  
      (|  /      \  |___   \\ \__/ //  //  \ ___ |.  | |.  \    \. |  
     /|__/ \    ( \_|:  \  /\\ __ //\ (:   _(  _|/\  |\|    \    \ |  
-   (_______)    \_______)(__________) \_______)(__\_|_)\___|\____\)  
+    (_______)    \_______)(__________) \_______)(__\_|_)\___|\____\)  
                                                                      
                                                                      
 Introduction
@@ -29,3 +29,5 @@ This plugin can be used as a bundle, with the [pathogen plugin][1]. Hence, you j
 
 	cd ~/.vim/bundle
 	git clone https://github.com/Choups314/vcoq.git
+
+[1]:https://github.com/tpope/vim-pathogen
