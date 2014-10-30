@@ -2,7 +2,7 @@ import vim
 
 IDETabpage = None
 
-# The following variables hold the buffers associated with the windows
+# The following variables hold the number of the window (their position in the tabpage)
 compiledWindow = None
 goalsWindow = None
 tagbarWindow = None
@@ -37,10 +37,65 @@ def setupWindows():
 	#  |   edit   | console |        |
 	#  -------------------------------
 	#
+	vim.command('e Tags')
 	tagbarWindow = vim.current.window
 	goalsWindow = createNewWindow(1, 1, True, 'Goals')
 	consoleWindow = createNewWindow(1, 1, True, 'Console')
 	compiledWindow = createNewWindow(3, 0, True, 'Accepted_statements')
 	vim.command('wincmd l')
 	editWindow = createNewWindow(3, 0, False, 'Edit')
+	# Then, we resize all the windows
+	vim.command('call UpdateWindowsNumber()')
+	updateWindows()
 
+def resizeWindow(win, newSize):
+	""" Resize the window 'win' (String), with 'newSize' (coordinates tuple), in percent """
+	global vimWindowSize
+	windowNumber = getWindowNumber(win)
+	vim.windows[windowNumber].width = (float(newSize[0]) / 100.0) * float(vimWindowSize[0])
+	vim.windows[windowNumber].height = (float(newSize[1]) / 100.0) * float(vimWindowSize[1])
+
+def updateWindows():
+	""" Update the size of the windows. """
+	# TODO : Add variables configuration to change the window sizes.
+	# By default, the windows have the following sizes :   x / y
+	#	Compiled : 	40% / 35%
+	#	Edit :		40% / 65%
+	#	Goals : 	40% / 60%
+	#	Console :	40% / 40%
+	#	Tags :		20% / 100%
+	updateVimWindowSize()
+	resizeWindow('Tags', (20, 100))
+	resizeWindow('Compiled', (40, 35))
+	resizeWindow('Goals', (40, 60))
+	resizeWindow('Edit', (40, 65))
+	resizeWindow('Console', (40, 40))
+
+vimWindowSize = (0, 0)
+def updateVimWindowSize():
+	""" Update the total (all the IDE window) window size (i.e. it updates the vimWindowSize global variable"""
+	global vimWindowSize
+	# We assume the 5 windows (compiled, edit, goals, console and tagbar) are opened, in the right order.
+	compiledWindowSize = getWindowSize('Compiled')
+	goalsWindowSize = getWindowSize('Goals')
+	tagbarWindowSize = getWindowSize('Tags')
+	vimWindowSize = (
+		compiledWindowSize[0] + goalsWindowSize[0] + tagbarWindowSize[0],
+		tagbarWindowSize[1])
+
+def getWindowNumber(win):
+	""" Return the number of the window 'win' (String) """
+	windowVariable = {
+		'Edit' : 's:editWindow',
+		'Goals' : 's:goalsWindow',
+		'Console' : 's:consoleWindow',
+		'Compiled' : 's:compiledWindow',
+		'Tags' : 's:tagbarWindow'
+	}.get(win, 'Tags')
+	return int(vim.bindeval(windowVariable)) - 1
+
+
+def getWindowSize(win):
+	""" Return a tuple (x, y) containing the number of rows/cols of the window 'win' (String)b """
+	windowNumber = getWindowNumber(win)
+	return (vim.windows[windowNumber].width, vim.windows[windowNumber].height)

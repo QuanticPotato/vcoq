@@ -7,3 +7,30 @@ py import vcoq
 function! LaunchC() 
 	py vcoq.init()
 endfunction
+
+autocmd VimResized * :call UpdateWindows()
+
+function! UpdateWindows()
+	call UpdateWindowsNumber()
+	py vcoq.updateWindows()
+endfunction
+
+" Fill the editWindow, goalsWindow, tagbarWindow ... script variables
+function! UpdateWindowsNumber()
+	let s:editWindow = UpdateWindowNr('Edit')
+	let s:consoleWindow = UpdateWindowNr('Console')
+	let s:tagbarWindow = UpdateWindowNr('Tags')
+	let s:compiledWindow = UpdateWindowNr('Accepted_statements')
+	let s:goalsWindow = UpdateWindowNr('Goals')
+endfunction
+
+function! UpdateWindowNr(buffName)
+	let l:windowNumber = bufwinnr(a:buffName)
+	if l:windowNumber == -1
+		echoe 'The ' . a:buffName . ' window has been closed !'	
+		" TODO kill the vcoq
+	endif
+	return l:windowNumber
+endfunction
+
+
