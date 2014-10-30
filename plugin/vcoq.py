@@ -15,7 +15,7 @@ def init():
 
 def createNewWindow(position, orientation, readonly, title):
 	""" Create one new window, in the current tab page.
-	@param position : (0=right/below, 1=left/top, 2=split) The position of the new window, compared to 
+	@param position : (0=right/below, 1=left/top)  The position of the new window, compared to 
 		the current window
 	@param orientation : (0=horizontal, 1=vertical) The orientation of the split with the 
 		current window
@@ -23,9 +23,11 @@ def createNewWindow(position, orientation, readonly, title):
 	@param title : String
 	@return : The buffer ot the new window
 	"""
-	positionCmd = 'rightbelow' if position == 0 else 'topleft' if position == 1 else '' 
-	orientationCmd = ' new ' if orientation == 0 else ' vnew '
-	vim.command(positionCmd + orientationCmd + title)
+	orientationCmd = 'sp ' if orientation == 0 else 'vsp '
+	vim.command(orientationCmd + title)
+	if position == 0: 
+		vim.command('wincmd r')
+	# TODO : Implement the readonly param
 	return vim.current.window.buffer
 
 def setupWindows():
@@ -40,10 +42,10 @@ def setupWindows():
 	vim.command('e Tags')
 	tagbarWindow = vim.current.window
 	goalsWindow = createNewWindow(1, 1, True, 'Goals')
-	consoleWindow = createNewWindow(1, 1, True, 'Console')
-	compiledWindow = createNewWindow(3, 0, True, 'Accepted_statements')
+	compiledWindow = createNewWindow(1, 1, True, 'Accepted_statements')
+	editWindow = createNewWindow(0, 0, False, 'Edit')
 	vim.command('wincmd l')
-	editWindow = createNewWindow(3, 0, False, 'Edit')
+	consoleWindow = createNewWindow(0, 0, True, 'Console')
 	# Then, we resize all the windows
 	vim.command('call UpdateWindowsNumber()')
 	updateWindows()
