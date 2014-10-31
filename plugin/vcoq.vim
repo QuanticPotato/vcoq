@@ -18,10 +18,11 @@ endfunction
 " Fill the editWindow, goalsWindow, tagbarWindow ... script variables
 function! UpdateWindowsNumber()
 	let s:editWindow = UpdateWindowNr('Edit')
-	let s:consoleWindow = UpdateWindowNr('Console')
+	let s:consoleWindow = UpdateWindowNr('Console_output')
 	let s:tagbarWindow = UpdateWindowNr('Tags')
 	let s:compiledWindow = UpdateWindowNr('Accepted_statements')
 	let s:goalsWindow = UpdateWindowNr('Goals')
+	let s:inputWindow = UpdateWindowNr('Console_input')
 endfunction
 
 function! UpdateWindowNr(buffName)

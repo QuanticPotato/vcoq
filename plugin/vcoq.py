@@ -1,17 +1,20 @@
 import vim
+import subprocess
 
 IDETabpage = None
 
 # The following variables hold the number of the window (their position in the tabpage)
-compiledWindow = None
-goalsWindow = None
-tagbarWindow = None
-editWindow = None
-consoleWindow = None
+windowBuffers = {}
+
+# The coqtop process
+coqtop = None
+# The string return by 'coqtop --version'
+coqtopVersion = ''
 
 def init(): 
 	IDETabpage = vim.current.tabpage
 	setupWindows()
+	launchCoqtopProcess()
 
 def createNewWindow(position, orientation, readonly, title):
 	""" Create one new window, in the current tab page.
@@ -27,7 +30,9 @@ def createNewWindow(position, orientation, readonly, title):
 	vim.command(orientationCmd + title)
 	if position == 0: 
 		vim.command('wincmd r')
-	# TODO : Implement the readonly param
+	if readonly :
+		vim.command('setlocal nomodifiable')
+		vim.command('setlocal buftype=nofile')
 	return vim.current.window.buffer
 
 def setupWindows():
@@ -35,18 +40,20 @@ def setupWindows():
 	# tab page : 
 	#  -------------------------------
 	#  | compiled |  goals  |        |
-	#  |----------|---------| tagbar |
-	#  |   edit   | console |        |
+	#  |----------|---------|        |
+	#  |          | console | tagbar |
+	#  |   edit   |---------|        |
+	#  |          |  input  |        |
 	#  -------------------------------
 	#
 	vim.command('e Tags')
-	tagbarWindow = vim.current.window
-	goalsWindow = createNewWindow(1, 1, True, 'Goals')
-	compiledWindow = createNewWindow(1, 1, True, 'Accepted_statements')
-	editWindow = createNewWindow(0, 0, False, 'Edit')
+	windowBuffers['Tagbar'] = vim.current.window.buffer
+	windowBuffers['Input'] = createNewWindow(1, 1, True, 'Console_input')
+	windowBuffers['Compiled'] = createNewWindow(1, 1, True, 'Accepted_statements')
+	windowBuffers['Edit'] = createNewWindow(0, 0, False, 'Edit')
 	vim.command('wincmd l')
-	consoleWindow = createNewWindow(0, 0, True, 'Console')
-	# Then, we resize all the windows
+	windowBuffers['Console'] = createNewWindow(1, 0, True, 'Console_output')
+	windowBuffers['Goals'] = createNewWindow(1, 0, False, 'Goals') # Then, we resize all the windows
 	vim.command('call UpdateWindowsNumber()')
 	updateWindows()
 
@@ -64,14 +71,16 @@ def updateWindows():
 	#	Compiled : 	40% / 35%
 	#	Edit :		40% / 65%
 	#	Goals : 	40% / 60%
-	#	Console :	40% / 40%
+	#	Console :	40% / 30%
+	#	input :		40% / 10%
 	#	Tags :		20% / 100%
 	updateVimWindowSize()
 	resizeWindow('Tags', (20, 100))
 	resizeWindow('Compiled', (40, 35))
 	resizeWindow('Goals', (40, 60))
 	resizeWindow('Edit', (40, 65))
-	resizeWindow('Console', (40, 40))
+	resizeWindow('Console', (40, 30))
+	resizeWindow('Input', (40, 10))
 
 vimWindowSize = (0, 0)
 def updateVimWindowSize():
@@ -92,12 +101,41 @@ def getWindowNumber(win):
 		'Goals' : 's:goalsWindow',
 		'Console' : 's:consoleWindow',
 		'Compiled' : 's:compiledWindow',
-		'Tags' : 's:tagbarWindow'
+		'Tags' : 's:tagbarWindow',
+		'Input' : 's:inputWindow'
 	}.get(win, 'Tags')
 	return int(vim.bindeval(windowVariable)) - 1
-
 
 def getWindowSize(win):
 	""" Return a tuple (x, y) containing the number of rows/cols of the window 'win' (String)b """
 	windowNumber = getWindowNumber(win)
 	return (vim.windows[windowNumber].width, vim.windows[windowNumber].height)
+
+def launchCoqtopProcess():
+	global coqtop, coqtopVersion
+	if coqtop :
+		try:
+			coqtop.terminate()
+			coqtop.communicate() 	# Clear the pipe
+		except OSError:
+			pass
+	coqtopVersion = subprocess.check_output(['coqtop', '--version'])
+	coqtop = subprocess.Popen(
+			['coqtop', '-ide-slave'],	# We need -ide-slave to be able to send XML queries
+			stdin = subprocess.PIPE, 
+			stdout = subprocess.PIPE, 
+			stderr = subprocess.STDOUT)
+	updateWindowContent('Console', coqtopVersion)
+
+def updateWindowContent(win, content):
+	""" Clear the 'win' window, and display the 'content' string. """
+	windowBuffer = windowBuffers[win]
+	readOnly = False
+	if windowBuffer.options['modifiable'] == False:
+		readOnly = True
+		windowBuffer.options['modifiable'] = True
+	del windowBuffer[:]
+	lines = content.split('\n')
+	windowBuffer.append(lines)
+	if readOnly :
+		windowBuffer.options['modifiable'] = False
