@@ -8,6 +8,9 @@ function! LaunchC()
 	py vcoq.init()
 endfunction
 
+autocmd BufEnter * py vcoq.bufferFocusChange(True)
+autocmd BufLeave * py vcoq.bufferFocusChange(False)
+
 autocmd VimResized * :call UpdateWindows()
 
 function! UpdateWindows()
@@ -33,5 +36,4 @@ function! UpdateWindowNr(buffName)
 	endif
 	return l:windowNumber
 endfunction
-
 

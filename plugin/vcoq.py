@@ -1,5 +1,9 @@
 import vim
 import subprocess
+import os
+import signal
+
+import xml.etree.ElementTree as XMLFactory
 
 IDETabpage = None
 
@@ -11,12 +15,21 @@ coqtop = None
 # The string return by 'coqtop --version'
 coqtopVersion = ''
 
+def error(str):
+	vim.command("echoe '" + str + "'")
+
+def command(cmd):
+	try:
+		vim.command(cmd)
+	except vim.error as e:
+		print('Vim exception : ' + str(e))
+
 def init(): 
 	IDETabpage = vim.current.tabpage
 	setupWindows()
 	launchCoqtopProcess()
 
-def createNewWindow(position, orientation, readonly, title):
+def createNewWindow(position, orientation, readonly, nofile, title):
 	""" Create one new window, in the current tab page.
 	@param position : (0=right/below, 1=left/top)  The position of the new window, compared to 
 		the current window
@@ -27,15 +40,17 @@ def createNewWindow(position, orientation, readonly, title):
 	@return : The buffer ot the new window
 	"""
 	orientationCmd = 'sp ' if orientation == 0 else 'vsp '
-	vim.command(orientationCmd + title)
+	command(orientationCmd + title)
 	if position == 0: 
 		vim.command('wincmd r')
-	if readonly :
+	if readonly:
 		vim.command('setlocal nomodifiable')
+	if nofile:
 		vim.command('setlocal buftype=nofile')
 	return vim.current.window.buffer
 
 def setupWindows():
+	global windowBuffers
 	# We first create the 3 columns, and then we split the first two, to obtain this 
 	# tab page : 
 	#  -------------------------------
@@ -48,13 +63,13 @@ def setupWindows():
 	#
 	vim.command('e Tags')
 	windowBuffers['Tagbar'] = vim.current.window.buffer
-	windowBuffers['Input'] = createNewWindow(1, 1, True, 'Console_input')
-	windowBuffers['Compiled'] = createNewWindow(1, 1, True, 'Accepted_statements')
-	windowBuffers['Edit'] = createNewWindow(0, 0, False, 'Edit')
+	windowBuffers['Input'] = createNewWindow(1, 1, False, True, 'Console_input')
+	windowBuffers['Compiled'] = createNewWindow(1, 1, True, True, 'Accepted_statements')
+	windowBuffers['Edit'] = createNewWindow(0, 0, False, False, 'Edit')
 	vim.command('wincmd l')
-	windowBuffers['Console'] = createNewWindow(1, 0, True, 'Console_output')
-	windowBuffers['Goals'] = createNewWindow(1, 0, False, 'Goals') # Then, we resize all the windows
-	vim.command('call UpdateWindowsNumber()')
+	windowBuffers['Console'] = createNewWindow(1, 0, True, True, 'Console_output')
+	windowBuffers['Goals'] = createNewWindow(1, 0, False, True, 'Goals') # Then, we resize all the windows
+	command('call UpdateWindowsNumber()')
 	updateWindows()
 
 def resizeWindow(win, newSize):
@@ -121,14 +136,16 @@ def launchCoqtopProcess():
 			pass
 	coqtopVersion = subprocess.check_output(['coqtop', '--version'])
 	coqtop = subprocess.Popen(
-			['coqtop', '-ide-slave'],	# We need -ide-slave to be able to send XML queries
+			['coqtop', '-ideslave'],	# We need -ide-slave to be able to send XML queries
 			stdin = subprocess.PIPE, 
 			stdout = subprocess.PIPE, 
-			stderr = subprocess.STDOUT)
+			stderr = subprocess.STDOUT,
+			preexec_fn = lambda:signal.signal(signal.SIGINT, signal.SIG_IGN))
 	updateWindowContent('Console', coqtopVersion)
 
 def updateWindowContent(win, content):
 	""" Clear the 'win' window, and display the 'content' string. """
+	global windowBuffers
 	windowBuffer = windowBuffers[win]
 	readOnly = False
 	if windowBuffer.options['modifiable'] == False:
@@ -139,3 +156,60 @@ def updateWindowContent(win, content):
 	windowBuffer.append(lines)
 	if readOnly :
 		windowBuffer.options['modifiable'] = False
+	
+def bufferName(buffer):
+	""" Extract the buffer name of the raw string 'buffer' """
+	# Check if the buffer name is a path
+	if len(buffer.split('/')) > 0:
+		return buffer.split('/')[-1]
+	return buffer
+
+def bufferFocusChange(entered):
+	""" This function is called when the user enter or leave a buffer.
+	It setup (and remove) the special maps for this buffer.
+	It also perform extra actions, depending on the buffer. """
+	if bufferName(vim.current.buffer.name) == 'Console_input':
+		cmd = 'imap <buffer> <CR> <Esc>:py vcoq.sendQueryCommand()<CR>a' if entered else 'mapclear <buffer>'
+		command(cmd)
+
+def sendXML(xml):
+	""" First, check wether the coq process is still running.
+	Then it send the XML command, and finally it waits for the response """
+	global coqtop
+	if coqtop == None:
+		error('ERROR: The coqtop process is not running or died !')
+		print('Trying to relaunch it ...')
+		launchCoqtopProcess()
+	try:
+		coqtop.stdin.write(XMLFactory.tostring(xml, 'utf-8'))
+	except IOError as e:
+		error('Cannot communicate with the coq process : ' + str(e))
+		coqtop = None
+		return None
+	response = ''
+	file = coqtop.stdout.fileno()
+	while True:
+		try:
+			response += os.read(file, 0x4000)
+			try:
+				t = XMLFactory.fromstring(response)
+				return t
+			except XMLFactory.ParseError:
+				continue
+		except OSError:
+			return None
+
+def sendQueryCommand():
+	global windowBuffers
+	query = windowBuffers['Input'][0]
+	xml = XMLFactory.Element('call')
+	xml.set('val', 'interp')
+	xml.set('id', '0')
+	xml.set('raw', 'true')
+	xml.text = query
+	response = sendXML(xml)
+	if response != None:
+		if response.get('val') == 'good':
+
+		elif response.get('val') == 'fail':
+
