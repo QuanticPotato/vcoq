@@ -15,8 +15,14 @@ coqtop = None
 # The string return by 'coqtop --version'
 coqtopVersion = ''
 
-def error(str):
-	vim.command("echoe '" + str + "'")
+def error(strr):
+	strr.replace("'", "\\'")
+	strr.replace('"', '\\"')
+	vim.command('echohl ErrorMessage')
+	lines = strr.split('\n')
+	for line in lines:
+		vim.command('echom "' + line + '"')
+	vim.command('echohl')
 
 def command(cmd):
 	try:
@@ -210,6 +216,6 @@ def sendQueryCommand():
 	response = sendXML(xml)
 	if response != None:
 		if response.get('val') == 'good':
-
+			print(response.find('string').text)
 		elif response.get('val') == 'fail':
-
+			error(str(response.text))

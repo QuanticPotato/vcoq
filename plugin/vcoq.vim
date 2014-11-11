@@ -8,6 +8,12 @@ function! LaunchC()
 	py vcoq.init()
 endfunction
 
+function! SetupHighlights()
+	highlight ErrorMessage ctermbg=Red ctermfg=White
+endfunction
+
+call SetupHighlights()
+
 autocmd BufEnter * py vcoq.bufferFocusChange(True)
 autocmd BufLeave * py vcoq.bufferFocusChange(False)
 
