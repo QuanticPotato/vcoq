@@ -5,7 +5,7 @@ py if not vim.eval("s:current_dir") in sys.path:
 py import vcoq
 
 function! LaunchC() 
-	py vcoq.init()
+	py vcoq.main.launch()
 endfunction
 
 function! SetupHighlights()
@@ -14,14 +14,14 @@ endfunction
 
 call SetupHighlights()
 
-autocmd BufEnter * py vcoq.bufferFocusChange(True)
-autocmd BufLeave * py vcoq.bufferFocusChange(False)
-
-autocmd VimResized * :call UpdateWindows()
+autocmd BufEnter * py vcoq.main.onBufferFocus(True)
+autocmd BufLeave * py vcoq.main.onBufferFocus(False)
+autocmd BufWinLeave * py vcoq.main.onClose()
+autocmd VimResized * py vcoq.main.onVimResized()
 
 function! UpdateWindows()
 	call UpdateWindowsNumber()
-	py vcoq.updateWindows()
+	py vcoq.main.onWindowsUpdated()
 endfunction
 
 " Fill the editWindow, goalsWindow, tagbarWindow ... script variables
@@ -37,7 +37,7 @@ endfunction
 function! UpdateWindowNr(buffName)
 	let l:windowNumber = bufwinnr(a:buffName)
 	if l:windowNumber == -1
-		echoe 'The ' . a:buffName . ' window has been closed !'	
+		echoe 'The ' . a:buffName . ' window has been closed ! (Vcoq is going to close ..)'	
 		" TODO kill the vcoq
 	endif
 	return l:windowNumber
