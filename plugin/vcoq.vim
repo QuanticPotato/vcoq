@@ -10,6 +10,13 @@ endfunction
 
 function! SetupHighlights()
 	highlight ErrorMessage ctermbg=Red ctermfg=White
+	" The following highlights correspond to the python Color enum
+	highlight Red ctermbg=Red ctermfg=White
+	highlight Blue ctermbg=Blue ctermfg=White
+	highlight Yellow ctermbg=Yellow ctermfg=Black
+	highlight White ctermbg=White ctermfg=Black
+	highlight Green ctermbg=Green ctermfg=White
+	highlight Purple ctermbg=Magenta ctermfg=White
 endfunction
 
 call SetupHighlights()

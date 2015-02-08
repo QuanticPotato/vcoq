@@ -1,11 +1,16 @@
 import vim
 
+import buffers
+from utils import error, command
+
 class WindowsManager:
 
 	def __init__(self):
 		# The following variables hold the number of the window (their position in the tabpage)
 		self.windowBuffers = {}
 		self.vimWindowSize = (0, 0)
+		self.input = buffers.Input(self)
+		self.output = buffers.Output(self)
 
 	def setupWindows(self):
 		# We first create the 3 columns, and then we split the first two, to obtain this 
@@ -62,20 +67,6 @@ class WindowsManager:
 		windowNumber = self.getWindowNumber(win)
 		return (vim.windows[windowNumber].width, vim.windows[windowNumber].height)
 
-	def updateWindowContent(self, win, content):
-		""" Clear the 'win' window, and display the 'content' string. """
-		global windowBuffers
-		windowBuffer = self.windowBuffers[win]
-		readOnly = False
-		if windowBuffer.options['modifiable'] == False:
-			readOnly = True
-			windowBuffer.options['modifiable'] = True
-		del windowBuffer[:]
-		lines = content.split('\n')
-		windowBuffer.append(lines)
-		if readOnly :
-			windowBuffer.options['modifiable'] = False
-
 	def createNewWindow(self, position, orientation, readonly, nofile, title):
 		""" Create one new window, in the current tab page.
 		@param position : (0=right/below, 1=left/top)  The position of the new window, compared to 
@@ -87,7 +78,7 @@ class WindowsManager:
 		@return : The buffer ot the new window
 		"""
 		orientationCmd = 'sp ' if orientation == 0 else 'vsp '
-		vim.command(orientationCmd + title)
+		command(orientationCmd + title)
 		if position == 0: 
 			vim.command('wincmd r')
 		if readonly:
