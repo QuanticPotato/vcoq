@@ -8,6 +8,10 @@ function! LaunchC()
 	py vcoq.main.launch()
 endfunction
 
+function! Next()
+	py vcoq.main.next()
+endfunction
+
 function! SetupHighlights()
 	highlight ErrorMessage ctermbg=Red ctermfg=White
 	" The following highlights correspond to the python Color enum
@@ -44,6 +48,7 @@ endfunction
 function! UpdateWindowNr(buffName)
 	let l:windowNumber = bufwinnr(a:buffName)
 	if l:windowNumber == -1
+		py vccoq.main.shutdown()
 		echoe 'The ' . a:buffName . ' window has been closed ! (Vcoq is going to close ..)'	
 		" TODO kill the vcoq
 	endif

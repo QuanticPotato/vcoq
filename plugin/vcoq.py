@@ -13,9 +13,19 @@ class Plugin:
 		self.launched = False
 
 	def launch(self): 
+		# Don't relaunched if it is already running !
+		if self.launched == True:
+			return False
 		self.launched = True
 		self.windowsManager.setupWindows()
 		self.coqManager.launchCoqtopProcess()
+	
+	def shutdown(self):
+		self.launched = False
+		# TODO : close the windows
+
+	def next(self):
+		print(self.windowsManager.input.getChunk("Edit", (0, 0)))
 
 	################
 	## Vim events ##
