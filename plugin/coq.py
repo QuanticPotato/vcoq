@@ -4,7 +4,7 @@ import os
 import signal
 
 import utils
-from buffers import Text
+from buffers import Text, Color
 
 class CoqManager:
 	
@@ -44,13 +44,37 @@ class CoqManager:
 		response = self.sendXML(xml)
 		if response != None:
 			if response.get('val') == 'good':
-				rep = Text(response.find('string').text)
-				self.windowsManager.output.updateWindowContent("Console", rep, True)
-						
+				response_info = response.find('string')
+				if not response_info is None:
+					rep = Text(response_info.text)
+					self.windowsManager.output.updateWindowContent("Console", rep, True)
 			elif response.get('val') == 'fail':
-				utils.error(str(response.text))
+				err = Text(str(response.text))
+				err.setColor(Color.red)
+				self.windowsManager.output.updateWindowContent("Console", err, True)
 		else:
 			utils.error("No responses ..")
+
+	def sendChunk(self, chunk):
+		xml = XMLFactory.Element('call')
+		xml.set('val', 'interp')
+		xml.set('id', '0')
+		xml.text = chunk.decode('utf-8')
+		response = self.sendXML(xml)
+		if response != None:
+			if response.get('val') == 'good':
+				#response_info = response.find('string')
+				#if not response_info is None:
+				#	rep = Text(response_info.text)
+				#	self.windowsManager.output.updateWindowContent("Console", rep, True)
+				return True
+			elif response.get('val') == 'fail':
+				err = Text(str(response.text))
+				err.setColor(Color.red)
+				self.windowsManager.output.updateWindowContent("Console", err, True)
+		else:
+			utils.error("No responses ..")
+		return False
 
 	def sendXML(self, xml):
 		""" First, check wether the coq process is still running.

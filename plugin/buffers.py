@@ -69,13 +69,12 @@ class Input:
 		""" Returns the 'line' line from the 'bufName' buffer (without the trailling '\n' """
 		return self.windowsManager.windowBuffers[bufName][line]
 
-	def getChunk(self, bufName, fromPos):
+	def getChunk(self, buf, fromPos):
 		""" Return either :
 			- The code between 'from' (a tuple (x, y)) and the next dot 
 			- The next comment
 		The dots included in comments, strings or in import path, and the nested comments  are ignored. 
 		Returns the chunk in a string, and the end position of the chunk in the buffer, or False if it fails """
-		buf = self.windowsManager.windowBuffers[bufName]
 		# First, we switch depending on the next chunk type
 		relevantPos = self.skipWhitespaces(buf, fromPos)
 		if relevantPos == (-1, 1):
@@ -113,10 +112,11 @@ class Input:
 						print("Unterminated string !")
 						return False
 				else: 
-					# A dot is relevant only if it is followed by a space
-					if remaining[dot_occ + 1:dot_occ + 2].strip() == "":
-						chunk = remaining[:dot_occ]
-						return (chunk, textPos(buf, skipped + len(chunk) + 1))
+					# A dot is relevant only if it is followed by a space, or if it is the last character of the line
+					dotPosInBuf = textPos(buf, skipped + dot_occ + 2)
+					if (remaining[dot_occ + 1:dot_occ + 1].strip() == "") or (dotPosInBuf[0] + 1 == len(buf[dotPosInBuf[1]])):
+						chunk = remaining[:dot_occ] + "."
+						return (chunk, textPos(buf, skipped + len(chunk)))
 					else:
 						dotPos = dot_occ + 1
 			print("No ending dot !")

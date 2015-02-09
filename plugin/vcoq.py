@@ -3,6 +3,7 @@ import os
 
 import windows as WM
 import coq as CM
+from file import File
 import utils
 
 class Plugin:
@@ -10,6 +11,7 @@ class Plugin:
 	def __init__(self):
 		self.windowsManager = WM.WindowsManager()
 		self.coqManager = CM.CoqManager(self.windowsManager)
+		self.instance = None
 		self.launched = False
 
 	def launch(self): 
@@ -19,13 +21,16 @@ class Plugin:
 		self.launched = True
 		self.windowsManager.setupWindows()
 		self.coqManager.launchCoqtopProcess()
+		self.instance = File(self, (self.windowsManager.windowBuffers['Edit'],
+			self.windowsManager.windowBuffers['Compiled']))
 	
 	def shutdown(self):
 		self.launched = False
 		# TODO : close the windows
 
 	def next(self):
-		print(self.windowsManager.input.getChunk("Edit", (0, 0)))
+		if self.instance != None:
+			self.instance.next()
 
 	################
 	## Vim events ##
