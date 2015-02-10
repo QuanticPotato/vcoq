@@ -19,6 +19,7 @@ class Plugin:
 		if self.launched == True:
 			return False
 		self.launched = True
+		vim.command(":call MapVcoq()")
 		self.windowsManager.setupWindows()
 		self.coqManager.launchCoqtopProcess()
 		self.instance = File(self, (self.windowsManager.windowBuffers['Edit'],

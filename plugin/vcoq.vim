@@ -4,12 +4,25 @@ py if not vim.eval("s:current_dir") in sys.path:
 	\  sys.path.append(vim.eval("s:current_dir"))
 py import vcoq
 
+" User commands and mappings
+
 function! LaunchC() 
 	py vcoq.main.launch()
 endfunction
 
 function! Next()
 	py vcoq.main.next()
+endfunction
+
+map <F9> :call LaunchC()<CR>
+
+function! MapVcoq()
+	" WARNING : 	imaps.vim already use the <c-j> map. To avoid any conflicts,
+	" 		we first unmap this key sequence (You might want to change
+	" 		it if <c-j> is already in use in another plugin)
+	unmap <c-j>
+	map <c-j>  :call Next()<CR>
+	imap <c-j> <Esc>:call Next()<CR>a
 endfunction
 
 function! SetupHighlights()

@@ -41,7 +41,7 @@ def textPos(buf, offset):
 			y += 1
 		else:
 			x += 1
-	if x+1 == len(buf[y]): flag = 1
+	if (y == len(buf)) or (x+1 == len(buf[y])): flag = 1
 	elif x == 0: flag = 2
 	return (x, y, flag)
 
