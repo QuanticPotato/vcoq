@@ -115,8 +115,11 @@ class Input:
 					# A dot is relevant only if it is followed by a space, or if it is the last character of the line
 					dotPosInBuf = textPos(buf, skipped + dot_occ + 2)
 					if (remaining[dot_occ + 1:dot_occ + 1].strip() == "") or (dotPosInBuf[0] + 1 == len(buf[dotPosInBuf[1]])):
-						chunk = remaining[:dot_occ] + "."
-						return (chunk, textPos(buf, skipped + len(chunk)))
+						chunkEndPos = textPos(buf, skipped + len(remaining[:dot_occ]) + 1)
+						chunkEndPos = (chunkEndPos[0] + 1, chunkEndPos[1], chunkEndPos[2])
+						chunk = textSubstr(buf, (0, 0), chunkEndPos, True, True)
+						newLine = chunkEndPos[0] == len(buf[chunkEndPos[1]])
+						return (chunk, chunkEndPos, newLine)
 					else:
 						dotPos = dot_occ + 1
 			print("No ending dot !")

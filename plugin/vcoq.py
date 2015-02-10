@@ -44,7 +44,7 @@ class Plugin:
 			return False
 		if utils.bufferName(vim.current.buffer.name) == 'Console_input':
 			cmd = 'imap <buffer> <CR> <Esc>:py vcoq.main.coqManager.sendQueryCommand()<CR>a' if entered else 'mapclear <buffer>'
-			utils.command(cmd)
+			vim.command(cmd)
 
 	def onVimResized(self):
 		if self.launched == False:

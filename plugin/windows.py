@@ -1,7 +1,8 @@
 import vim
 
 import buffers
-from utils import error, command
+
+from utils import error, textEditLastChar
 
 class WindowsManager:
 
@@ -78,7 +79,7 @@ class WindowsManager:
 		@return : The buffer ot the new window
 		"""
 		orientationCmd = 'sp ' if orientation == 0 else 'vsp '
-		command(orientationCmd + title)
+		vim.command(orientationCmd + title)
 		if position == 0: 
 			vim.command('wincmd r')
 		if readonly:
@@ -105,9 +106,19 @@ class WindowsManager:
 		}.get(win, 'Tags')
 		return int(vim.bindeval(windowVariable)) - 1
 
+	def commands(self, buf, cmds):
+		""" Execute the commands 'cmds' in a specific buffer. """
+		currentBuffer = vim.current.buffer.name
+		vim.command("b! " + buf)
+		for cmd in cmds:
+			vim.command(cmd)
+		vim.command("b! " + currentBuffer)
+
 	def onClose(self):
 		""" When a buffer is closed
 		We first check if it is a Vcoq window, and then we quit if needed 
 		(By the way, we update the window numbers)  (Required ?) """
 		vim.command("call UpdateWindowsNumber()")
+
+
 

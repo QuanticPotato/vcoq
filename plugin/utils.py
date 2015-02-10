@@ -9,12 +9,6 @@ def error(strr):
 		vim.command('echom "' + line + '"')
 	vim.command('echohl')
 
-def command(cmd):
-#	try:
-		vim.command(cmd)
-#	except vim.error as e:
-#		print('Vim exception : ' + str(e))
-
 def bufferName(buffer):
 	""" Extract the buffer name of the raw string 'buffer' """
 	# Check if the buffer name is a path
@@ -51,8 +45,9 @@ def textPos(buf, offset):
 	elif x == 0: flag = 2
 	return (x, y, flag)
 
-def textSubstr(buf, start, end, oneString = True):
-	""" Return a one-dimension string """
+def textSubstr(buf, start, end, oneString = True, addSpace = False):
+	""" Return a one-dimension string. If addSpace is True, then the function
+	add one spaces between every lines (it only works if oneString is True). """
 	sub = []
 	if start[1] == end[1]:
 		sub.append(buf[start[1]][start[0]:end[0]])
@@ -64,7 +59,10 @@ def textSubstr(buf, start, end, oneString = True):
 		sub.append(buf[end[1]][:end[0]])
 	if oneString:
 		string = ""
-		for l in sub: string += l
+		for l in sub: 
+			string += l
+			if addSpace:
+				string += " " 
 		return string
 	else : return sub
 
@@ -75,8 +73,7 @@ def textLength(buf):
 	return length
 
 def textCut(buf, start, end):
-	end2 = (end[0] + 1, end[1], end[2]) # We want to include the last character
-	sub = textSubstr(buf, start, end2, False)
+	sub = textSubstr(buf, start, end, False)
 	def delLine(buf, i, start, end):
 		if ((end[2] == 1 and (start[0] == -1 or start[2] == 2)) or (start[2] == 2 and end[0] == -1)) : 
 			del buf[i]
@@ -87,7 +84,7 @@ def textCut(buf, start, end):
 	if start[1] == end[1]:
 		delLine(buf, start[1], start, end)
 	else:
-		j = 0 # Each time we delete a line, we just decrease the index (of the folowing line)
+		j = 0 # Each time we delete a line, we just decrease the index (of the following line)
 		if delLine(buf, start[1], start, (-1, 0, 0)): j += 1
 		for i in xrange(start[1] + 1 - j, end[1] - j):
 			del buf[start[1] + 1]
@@ -102,3 +99,12 @@ def textConcat(buf, add, newLine):
 	for i in xrange(0 if newLine else 1, len(add)):
 		buf.append(add[i])
 
+def textEditLastChar(buf, newChar, append = False):
+	""" If newChar is '', then this function delete the last character of the buffer. """
+	y = len(buf) - 1
+	if append:
+		sub = buf[y]
+	else:
+		# Get the string without the last character
+		sub = buf[y][:-1]
+	buf[y] = sub + newChar
