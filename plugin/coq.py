@@ -32,10 +32,10 @@ class CoqManager:
 				preexec_fn = lambda:signal.signal(signal.SIGINT, signal.SIG_IGN))
 		versionText = Text(self.coqtopVersion)
 		versionText.setPosition(0, 2)
-		self.windowsManager.output.updateWindowContent('Console', versionText)
+		self.windowsManager.output.updateWindowContent('__Console__', versionText)
 
 	def sendQueryCommand(self):
-		query = self.windowsManager.input.getLine("Input", 0)
+		query = self.windowsManager.input.getLine("__Input__", 0)
 		xml = XMLFactory.Element('call')
 		xml.set('val', 'interp')
 		xml.set('id', '0')
@@ -47,11 +47,11 @@ class CoqManager:
 				response_info = response.find('string')
 				if not response_info is None:
 					rep = Text(response_info.text)
-					self.windowsManager.output.updateWindowContent("Console", rep, True)
+					self.windowsManager.output.updateWindowContent("__Console__", rep, True)
 			elif response.get('val') == 'fail':
 				err = Text(str(response.text))
 				err.setColor(Color.red)
-				self.windowsManager.output.updateWindowContent("Console", err, True)
+				self.windowsManager.output.updateWindowContent("__Console__", err, True)
 		else:
 			utils.error("No responses ..")
 
@@ -71,7 +71,7 @@ class CoqManager:
 			elif response.get('val') == 'fail':
 				err = Text(str(response.text))
 				err.setColor(Color.red)
-				self.windowsManager.output.updateWindowContent("Console", err, True)
+				self.windowsManager.output.updateWindowContent("__Console__", err, True)
 		else:
 			utils.error("No responses ..")
 		return False

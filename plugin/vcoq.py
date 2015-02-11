@@ -9,7 +9,7 @@ import utils
 class Plugin:
 
 	def __init__(self):
-		self.windowsManager = WM.WindowsManager()
+		self.windowsManager = WM.WindowsManager(self)
 		self.coqManager = CM.CoqManager(self.windowsManager)
 		self.instance = None
 		self.launched = False
@@ -22,12 +22,15 @@ class Plugin:
 		vim.command(":call MapVcoq()")
 		self.windowsManager.setupWindows()
 		self.coqManager.launchCoqtopProcess()
-		self.instance = File(self, (self.windowsManager.windowBuffers['Edit'],
-			self.windowsManager.windowBuffers['Compiled']))
+		self.instance = File(self, (self.windowsManager.windowBuffers['__Edit__'],
+			self.windowsManager.windowBuffers['__Compiled__']))
+		self.windowsManager.focusWindow("__Edit__")
 	
 	def shutdown(self):
 		self.launched = False
-		# TODO : close the windows
+		print(' ') # Used to display "Press ENTER to continue .."
+		utils.error("Stopping vcoq ...")
+		vim.command('windo bd') # Close every windows
 
 	def next(self):
 		if self.instance != None:
@@ -37,30 +40,24 @@ class Plugin:
 	## Vim events ##
 	################
 
-	def onBufferFocus(self, entered):
+	def onBufferFocus(self, entered, buffer):
 		""" This function is called when the user enter or leave a buffer.
-		It setup (and remove) the special maps for this buffer.
+		It setups (and removes) the special maps for this buffer.
 		It also perform extra actions, depending on the buffer. """
 		if self.launched == False:
-			return False
-		if utils.bufferName(vim.current.buffer.name) == 'Console_input':
+			return 0
+		if buffer == '__Input__':
 			cmd = 'imap <buffer> <CR> <Esc>:py vcoq.main.coqManager.sendQueryCommand()<CR>a' if entered else 'mapclear <buffer>'
 			vim.command(cmd)
+		return 1
 
 	def onVimResized(self):
 		if self.launched == False:
 			return False
-		vim.command("call UpdateWindows()")
-
-	def onWindowsUpdated(self):
-		""" Called when the windows number have been updated """
-		if self.launched == False: return False
 		self.windowsManager.updateWindows()
 
-	def onClose(self):
-		if self.launched == False: return False
-		self.windowsManager.onClose()
-
-
+	def onEnter(self, buffer):
+		self.windowsManager.onEnter(buffer)
+		return 0
 
 main = Plugin()

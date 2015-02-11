@@ -38,33 +38,34 @@ endfunction
 
 call SetupHighlights()
 
-autocmd BufEnter * py vcoq.main.onBufferFocus(True)
-autocmd BufLeave * py vcoq.main.onBufferFocus(False)
-autocmd BufWinLeave * py vcoq.main.onClose()
+autocmd BufEnter * call pyeval('vcoq.main.onBufferFocus(True, "' . expand('<afile>') . '")')
+autocmd BufLeave * call pyeval('vcoq.main.onBufferFocus(False, "' . expand('<afile>') . '")')
+"autocmd BufWinLeave * call pyeval('vcoq.main.onClose("' . expand('<afile>') . '")')
+autocmd WinEnter * call pyeval('vcoq.main.onEnter("' . expand('<afile>') . '")')
 autocmd VimResized * py vcoq.main.onVimResized()
 
-function! UpdateWindows()
-	call UpdateWindowsNumber()
-	py vcoq.main.onWindowsUpdated()
+" Init the local variables of the current window
+function! InitWindow()
+	setlocal noreadonly " in case the 'view' mode is used
+	setlocal buftype=nofile
+	setlocal bufhidden=hide
+	setlocal noswapfile
+	setlocal nobuflisted
+	setlocal nolist
+	setlocal nowrap
+	setlocal winfixwidth
+	setlocal textwidth=0
+	setlocal nospell
+	setlocal nofoldenable
+	setlocal foldcolumn=0
+	setlocal foldmethod&
+	setlocal foldexpr&
 endfunction
 
-" Fill the editWindow, goalsWindow, tagbarWindow ... script variables
-function! UpdateWindowsNumber()
-	let s:editWindow = UpdateWindowNr('Edit')
-	let s:consoleWindow = UpdateWindowNr('Console_output')
-	let s:tagbarWindow = UpdateWindowNr('Tags')
-	let s:compiledWindow = UpdateWindowNr('Accepted_statements')
-	let s:goalsWindow = UpdateWindowNr('Goals')
-	let s:inputWindow = UpdateWindowNr('Console_input')
+" Change window until the window 'win' has focus.
+function! FocusWindow(win)
+	let num = bufwinnr(a:win)
+	while winnr()!= num
+		wincmd w
+	endwhile
 endfunction
-
-function! UpdateWindowNr(buffName)
-	let l:windowNumber = bufwinnr(a:buffName)
-	if l:windowNumber == -1
-		py vccoq.main.shutdown()
-		echoe 'The ' . a:buffName . ' window has been closed ! (Vcoq is going to close ..)'	
-		" TODO kill the vcoq
-	endif
-	return l:windowNumber
-endfunction
-

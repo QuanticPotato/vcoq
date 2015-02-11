@@ -6,7 +6,9 @@ from utils import error, textEditLastChar
 
 class WindowsManager:
 
-	def __init__(self):
+	def __init__(self, plugin):
+		self.main = plugin
+		self.windowsReady = False
 		# The following variables hold the number of the window (their position in the tabpage)
 		self.windowBuffers = {}
 		self.vimWindowSize = (0, 0)
@@ -24,23 +26,25 @@ class WindowsManager:
 		#  |          |  input  |        |
 		#  -------------------------------
 		#
-		vim.command('e Tags')
-		self.windowBuffers['Tagbar'] = vim.current.window.buffer
-		self.windowBuffers['Input'] = self.createNewWindow(1, 1, False, True, 'Console_input')
-		self.windowBuffers['Compiled'] = self.createNewWindow(1, 1, True, True, 'Accepted_statements')
-		self.windowBuffers['Edit'] = self.createNewWindow(0, 0, False, False, 'Edit')
+		vim.command('e __Tagbar__')
+		vim.command('call InitWindow()')
+		self.windowBuffers['__Tagbar__'] = vim.current.window.buffer
+		self.windowBuffers['__Input__'] = self.createNewWindow(1, 1, False, '__Input__', 'Console input')
+		self.windowBuffers['__Compiled__'] = self.createNewWindow(1, 1, True, '__Compiled__', 'Accepted statements')
+		self.windowBuffers['__Edit__'] = self.createNewWindow(0, 0, False, '__Edit__', 'Edit')
 		vim.command('wincmd l')
-		self.windowBuffers['Console'] = self.createNewWindow(1, 0, True, True, 'Console_output')
-		self.windowBuffers['Goals'] = self.createNewWindow(1, 0, False, True, 'Goals') # Then, we resize all the windows
-		vim.command('call UpdateWindowsNumber()')
+		self.windowBuffers['__Console__'] = self.createNewWindow(1, 0, True, '__Console__', 'Console output')
+		self.windowBuffers['__Goals__'] = self.createNewWindow(1, 0, True, '__Goals__', "Goals") 
+		self.windowsReady = True
+		# Then, we resize all the windows
 		self.updateWindows()
 
 	def updateVimWindowSize(self):
 		""" Update the total (all the IDE window) window size (i.e. it updates the vimWindowSize global variable"""
 		# We assume the 5 windows (compiled, edit, goals, console and tagbar) are opened, in the right order.
-		compiledWindowSize = self.getWindowSize('Compiled')
-		goalsWindowSize = self.getWindowSize('Goals')
-		tagbarWindowSize = self.getWindowSize('Tags')
+		compiledWindowSize = self.getWindowSize('__Compiled__')
+		goalsWindowSize = self.getWindowSize('__Goals__')
+		tagbarWindowSize = self.getWindowSize('__Tagbar__')
 		self.vimWindowSize = (
 			compiledWindowSize[0] + goalsWindowSize[0] + tagbarWindowSize[0],
 			tagbarWindowSize[1])
@@ -56,19 +60,19 @@ class WindowsManager:
 		#	input :		40% / 10%
 		#	Tags :		20% / 100%
 		self.updateVimWindowSize()
-		self.resizeWindow('Tags', (20, 100))
-		self.resizeWindow('Compiled', (40, 35))
-		self.resizeWindow('Goals', (40, 60))
-		self.resizeWindow('Edit', (40, 65))
-		self.resizeWindow('Console', (40, 30))
-		self.resizeWindow('Input', (40, 10))
+		self.resizeWindow('__Tagbar__', (20, 100))
+		self.resizeWindow('__Compiled__', (40, 35))
+		self.resizeWindow('__Goals__', (40, 60))
+		self.resizeWindow('__Edit__', (40, 65))
+		self.resizeWindow('__Console__', (40, 30))
+		self.resizeWindow('__Input__', (40, 10))
 
 	def getWindowSize(self, win):
 		""" Return a tuple (x, y) containing the number of rows/cols of the window 'win' (String)b """
 		windowNumber = self.getWindowNumber(win)
 		return (vim.windows[windowNumber].width, vim.windows[windowNumber].height)
 
-	def createNewWindow(self, position, orientation, readonly, nofile, title):
+	def createNewWindow(self, position, orientation, readonly, name, title):
 		""" Create one new window, in the current tab page.
 		@param position : (0=right/below, 1=left/top)  The position of the new window, compared to 
 			the current window
@@ -79,13 +83,13 @@ class WindowsManager:
 		@return : The buffer ot the new window
 		"""
 		orientationCmd = 'sp ' if orientation == 0 else 'vsp '
-		vim.command(orientationCmd + title)
+		vim.command(orientationCmd + name)
 		if position == 0: 
 			vim.command('wincmd r')
 		if readonly:
 			vim.command('setlocal nomodifiable')
-		if nofile:
-			vim.command('setlocal buftype=nofile')
+		vim.command("call InitWindow()")
+		self.setStatusLine(title)
 		return vim.current.window.buffer
 	
 	def resizeWindow(self, win, newSize):
@@ -95,16 +99,14 @@ class WindowsManager:
 		vim.windows[windowNumber].height = (float(newSize[1]) / 100.0) * float(self.vimWindowSize[1])
 
 	def getWindowNumber(self, win):
-		""" Return the number of the window 'win' (String) """
-		windowVariable = {
-			'Edit' : 's:editWindow',
-			'Goals' : 's:goalsWindow',
-			'Console' : 's:consoleWindow',
-			'Compiled' : 's:compiledWindow',
-			'Tags' : 's:tagbarWindow',
-			'Input' : 's:inputWindow'
-		}.get(win, 'Tags')
-		return int(vim.bindeval(windowVariable)) - 1
+		""" Returns the number of the window 'win' (String).
+		If the window cannot be found, shutdown vcoq. """
+		num = int(vim.eval("bufwinnr('" + win + "')"))
+		if num == -1:
+			self.windowsReady = False
+			self.main.shutdown()
+			return
+		return num - 1
 
 	def commands(self, buf, cmds):
 		""" Execute the commands 'cmds' in a specific buffer. """
@@ -114,11 +116,24 @@ class WindowsManager:
 			vim.command(cmd)
 		vim.command("b! " + currentBuffer)
 
-	def onClose(self):
-		""" When a buffer is closed
-		We first check if it is a Vcoq window, and then we quit if needed 
-		(By the way, we update the window numbers)  (Required ?) """
-		vim.command("call UpdateWindowsNumber()")
+	def onEnter(self, buffer):
+		""" Check if a buffer has been closed. """
+		if not self.windowsReady:
+			return None
+		bufList = ["__Tagbar__", "__Edit__", "__Console__", "__Input__", "__Compiled__", "__Goals__"]
+		for b in bufList:
+			# Check if the buffer was closed
+			num = int(vim.eval("bufwinnr('" + b + "')"))
+			if num == -1:	
+				self.windowsReady = False
+				self.main.shutdown()
+				return
 
+	def setStatusLine(self, status):
+		""" Update the status line of the window 'win' """
+		vim.command("let &l:statusline = '" + status + "'")
 
+	def focusWindow(self, win):
+		vim.command("call FocusWindow('" + win + "')")
+		
 
