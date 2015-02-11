@@ -14,6 +14,18 @@ function! Next()
 	py vcoq.main.next()
 endfunction
 
+" Write current buffers to a file
+function! Write(filename)
+	call pyeval('vcoq.main.onWrite("' . a:filename . '")')
+endfunction
+command! -nargs=1 W call Write(<f-args>)
+
+" Open a file in the Edit buffer
+function! Open(filename)
+	call pyeval('vcoq.main.onOpen("' . a:filename . '")')
+endfunction
+command! -nargs=1 O call Open(<f-args>)
+
 map <F9> :call LaunchC()<CR>
 
 function! MapVcoq()

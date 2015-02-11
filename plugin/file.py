@@ -1,4 +1,4 @@
-from utils import textConcat, textCut, textEditLastChar
+from utils import textConcat, textCut, textEditLastChar, error
 
 class File:
 	""" Represents a file (A separated class allow to open several files at a time.
@@ -15,11 +15,16 @@ class File:
 		self.editPosition = (0, 0)
 		# We manage a virtual new-line at the end of the compiled buffer.
 		self.editNewLine = False
-		self.output.options['modifiable'] = True
-		self.windowsManager.commands('__Compiled__', ["normal iPR"])
-		self.output.options['modifiable'] = False
+		self.initOutputCursor()
 		# Each chunk is describe by the following tuple : (startPos, endPos), where startPos and endPos are coords tuple
 		self.chunks = []
+
+	def initOutputCursor(self):
+		""" Init the newline-cursor in the Compiled buffer. """
+		self.output.options['modifiable'] = True
+		del self.output[:]
+		self.windowsManager.commands('__Compiled__', ["normal iPR"])
+		self.output.options['modifiable'] = False
 
 	def next(self):
 		nextChunk = self.windowsManager.input.getChunk(self.input, (0, 0))
@@ -37,3 +42,36 @@ class File:
 					self.windowsManager.commands('__Compiled__', ["normal G$aPR"])
 				self.output.options['modifiable'] = False
 
+	def write(self, filename):
+		try:
+			file = open(filename, 'w')
+			# We write the compiled buffer, and then the edit buffer
+			for i in xrange(len(self.output) - 1):
+				file.write(self.output[i] + "\n")
+			interline = self.output[-1][:-3] # We don't take the newline-cursor
+			if not self.editNewLine:
+				interline += self.input[0]
+			file.write(interline + "\n")
+			for i in xrange(0 if self.editNewLine else 1, len(self.input)):
+				file.write(self.input[i] + "\n")
+			file.close()
+		except IOError as e:
+			error(str(e))
+
+	def open(self, filename):
+		# First, clear the buffers
+		self.initOutputCursor()
+		del self.chunks[:]
+		del self.input[:]
+		try:
+			file = open(filename, 'r')
+			# We simply add every lines in the Edit buffer
+			firstLine = True
+			for line in file:
+				if firstLine: # We don't want to skip the first line
+					self.input[0] = line
+					firstLine = False
+				else: self.input.append(line)
+			file.close()
+		except IOError as e:
+			error(str(e))

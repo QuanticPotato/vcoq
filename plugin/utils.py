@@ -1,6 +1,7 @@
 import vim
 
 def error(strr):
+	print(' ') # Used to display "Press ENTER to continue .."
 	strr.replace("'", "\\'")
 	strr.replace('"', '\\"')
 	vim.command('echohl ErrorMessage')

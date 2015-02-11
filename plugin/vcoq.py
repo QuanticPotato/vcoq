@@ -28,7 +28,6 @@ class Plugin:
 	
 	def shutdown(self):
 		self.launched = False
-		print(' ') # Used to display "Press ENTER to continue .."
 		utils.error("Stopping vcoq ...")
 		vim.command('windo bd') # Close every windows
 
@@ -55,9 +54,18 @@ class Plugin:
 		if self.launched == False:
 			return False
 		self.windowsManager.updateWindows()
+		return 0
 
 	def onEnter(self, buffer):
 		self.windowsManager.onEnter(buffer)
+		return 0
+
+	def onWrite(self, filename):
+		self.instance.write(filename)
+		return 0
+
+	def onOpen(self, filename):
+		self.instance.open(filename)
 		return 0
 
 main = Plugin()
