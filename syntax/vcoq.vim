@@ -1,6 +1,5 @@
 " Vim syntax file
 " Language:     Coq
-" Filenames:    *.v
 " Maintainer:  Vincent Aravantinos <vincent.aravantinos@gmail.com>
 " Last Change: 2008 Dec 02 - Added the Program and Obligation constructions (in Coq v8.2) - with Serge Leblanc.
 "              2008 Jan 30 - Applied the improvments for all constructions, added 'with' and 'where' for
@@ -29,7 +28,7 @@
 " For version 6.x: Quit when a syntax file was already loaded
 if version < 600
  syntax clear
-elseif exists("b:current_syntax") && b:current_syntax == "coq"
+elseif exists("b:current_syntax") && b:current_syntax == "vcoq"
  finish
 endif
 
@@ -362,4 +361,8 @@ if version >= 508 || !exists("did_coq_syntax_inits")
  delcommand HiLink
 endif
 
-let b:current_syntax = "coq"
+" Highlight newline cursors (In the compiled buffer)
+highlight default link VCoqNewlineIcon Statement
+syntax match VCoqNewlineIcon '\S\@<![▶▼]\([-+# ]\?\)\@='
+
+let b:current_syntax = "vcoq"

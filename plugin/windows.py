@@ -31,7 +31,9 @@ class WindowsManager:
 		self.windowBuffers['__Tagbar__'] = vim.current.window.buffer
 		self.windowBuffers['__Input__'] = self.createNewWindow(1, 1, False, '__Input__', 'Console input')
 		self.windowBuffers['__Compiled__'] = self.createNewWindow(1, 1, True, '__Compiled__', 'Accepted statements')
+		vim.command('setfiletype vcoq')
 		self.windowBuffers['__Edit__'] = self.createNewWindow(0, 0, False, '__Edit__', 'Edit')
+		vim.command('setfiletype vcoq')
 		vim.command('wincmd l')
 		self.windowBuffers['__Console__'] = self.createNewWindow(1, 0, True, '__Console__', 'Console output')
 		self.windowBuffers['__Goals__'] = self.createNewWindow(1, 0, True, '__Goals__', "Goals") 
