@@ -53,7 +53,7 @@ class CoqManager:
 				err.setColor(Color.red)
 				self.windowsManager.output.updateWindowContent("__Console__", err, True)
 		else:
-			utils.error("No responses ..")
+			utils.error("No responses (query) ..")
 
 	def sendChunk(self, chunk):
 		xml = XMLFactory.Element('call')
@@ -73,8 +73,23 @@ class CoqManager:
 				err.setColor(Color.red)
 				self.windowsManager.output.updateWindowContent("__Console__", err, True)
 		else:
-			utils.error("No responses ..")
+			utils.error("No responses (sendChunk) ..")
 		return False
+
+	def rewind(self, steps):
+		xml = XMLFactory.Element('call')
+		xml.set('val', 'rewind')
+		xml.set('steps', str(steps))
+		response = self.sendXML(xml)
+		if response != None:
+			if response.get('val') == 'good':
+				additional_steps = response.find('int')
+				return steps + int(additional_steps.text)
+			print(XMLFactory.tostring(response))
+			utils.error("Something went wrong !")
+		else:
+			utils.error("No responses (rewind) ..")
+		return 0
 
 	def sendXML(self, xml):
 		""" First, check wether the coq process is still running.

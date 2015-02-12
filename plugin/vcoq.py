@@ -4,7 +4,7 @@ import os
 import windows as WM
 import coq as CM
 from file import File
-import utils
+from utils import error
 
 class Plugin:
 
@@ -28,7 +28,7 @@ class Plugin:
 	
 	def shutdown(self):
 		self.launched = False
-		utils.error("Stopping vcoq ...")
+		error("Stopping vcoq ...")
 		vim.command('windo bd') # Close every windows
 
 	def next(self):
@@ -51,20 +51,26 @@ class Plugin:
 		return 1
 
 	def onVimResized(self):
-		if self.launched == False:
-			return False
+		if self.launched == False: return 0
 		self.windowsManager.updateWindows()
 		return 0
 
 	def onEnter(self, buffer):
+		if self.launched == False: return 0
 		self.windowsManager.onEnter(buffer)
 		return 0
 
 	def onWrite(self, filename):
+		if self.launched == False: 
+			error("Vcoq isn't running", prompt=False)
+			return 0
 		self.instance.write(filename)
 		return 0
 
 	def onOpen(self, filename):
+		if self.launched == False: 
+			error("Vcoq isn't running", prompt=False)
+			return 0
 		self.instance.open(filename)
 		return 0
 

@@ -363,6 +363,6 @@ endif
 
 " Highlight newline cursors (In the compiled buffer)
 highlight default link VCoqNewlineIcon Statement
-syntax match VCoqNewlineIcon '\S\@<![▶▼]\([-+# ]\?\)\@='
+syntax match VCoqNewlineIcon '.*\zs[▶▼]'
 
 let b:current_syntax = "vcoq"

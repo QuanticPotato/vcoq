@@ -1,7 +1,8 @@
 import vim
 
-def error(strr):
-	print(' ') # Used to display "Press ENTER to continue .."
+def error(strr, prompt=True):
+	if prompt:
+		print(' ') # Used to display "Press ENTER to continue .."
 	strr.replace("'", "\\'")
 	strr.replace('"', '\\"')
 	vim.command('echohl ErrorMessage')
@@ -37,6 +38,8 @@ def textPos(buf, offset):
 	y = 0
 	flag = 0
 	for i in xrange(offset):
+		while len(buf[y]) == 0:
+			y += 1
 		if x+1 == len(buf[y]):
 			x = 0
 			y += 1
@@ -109,3 +112,8 @@ def textEditLastChar(buf, newChar, append = False):
 		# Get the string without the last character
 		sub = buf[y][:-1]
 	buf[y] = sub + newChar
+
+def textCursorPos(buf, diffX = 0, diffY = 0):
+	""" Returns the coords of the last character. """
+	y = len(buf) - 1
+	return (len(buf[y]) - 1 - diffX, y - diffY)
