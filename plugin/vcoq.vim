@@ -14,6 +14,10 @@ function! Next()
 	py vcoq.main.next()
 endfunction
 
+function! Prev()
+	py vcoq.main.prev()
+endfunction
+
 " Write current buffers to a file
 function! Write(filename)
 	call pyeval('vcoq.main.onWrite("' . a:filename . '")')
@@ -35,6 +39,10 @@ function! MapVcoq()
 	unmap <c-j>
 	map <c-j>  :call Next()<CR>
 	imap <c-j> <Esc>:call Next()<CR>a
+	
+	" Prev() map
+	map <c-l> :call Prev()<CR>
+	imap <c-l> <Esc>:call Prev()<CR>a
 endfunction
 
 function! SetupHighlights()

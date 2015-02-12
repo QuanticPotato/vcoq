@@ -35,6 +35,10 @@ class Plugin:
 		if self.instance != None:
 			self.instance.next()
 
+	def prev(self):
+		if self.instance != None:
+			self.instance.prev()
+
 	################
 	## Vim events ##
 	################

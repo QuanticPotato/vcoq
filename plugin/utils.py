@@ -79,7 +79,8 @@ def textLength(buf):
 def textCut(buf, start, end):
 	sub = textSubstr(buf, start, end, False)
 	def delLine(buf, i, start, end):
-		if ((end[2] == 1 and (start[0] == -1 or start[2] == 2)) or (start[2] == 2 and end[0] == -1)) : 
+		if (	((end[2] == 1 or end[0] == len(buf[i]))  and (start[0] == -1 or start[2] == 2)) \
+			or ((start[2] == 2 or start[0] == 0) and (end[0] == -1 or end[2] == 1))) : 
 			del buf[i]
 			return True
 		else:
@@ -96,12 +97,28 @@ def textCut(buf, start, end):
 		delLine(buf, end[1] - j, (-1, 0, 0), end)
 	return sub
 
-def textConcat(buf, add, newLine):
+def textAppend(buf, add, newLine):
 	""" Concat 'add' to 'buf'. The add array is assumed to be non-empty. """
 	if not newLine:
 		buf[-1] += add[0]
 	for i in xrange(0 if newLine else 1, len(add)):
 		buf.append(add[i])
+
+def textPrepend(buf, add, newLine):
+	firstLine = buf[0]
+	cmd = "normal gg"
+	if not newLine: cmd += "dd"
+	cmd += "O"
+	for i in xrange(len(add) - 1):
+		cmd += add[i] + "o"
+	i = len(add) - 1
+	if not newLine:
+		# First delete the current line
+		cmd += "0d$i" + add[i] + firstLine
+	else:
+		cmd += add[i]
+	cmd += ""
+	vim.command(cmd)
 
 def textEditLastChar(buf, newChar, append = False):
 	""" If newChar is '', then this function delete the last character of the buffer. """

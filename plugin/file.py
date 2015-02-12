@@ -1,4 +1,4 @@
-from utils import textConcat, textCut, textEditLastChar, error, textCursorPos
+from utils import textAppend, textPrepend, textCut, textEditLastChar, error, textCursorPos
 
 class File:
 	""" Represents a file (A separated class allow to open several files at a time.
@@ -10,7 +10,7 @@ class File:
 		self.coqManager = plugin.coqManager
 		self.input = buffers[0]
 		self.output = buffers[1]
-		# Each chunk is describe by the following tuple : (startPos, endPos), where startPos and endPos are coords tuple
+		# Each chunk is describe by the following tuple : (startPos, endPos, newLine), where startPos and endPos are coords tuple
 		self.chunks = []
 		# The whole file content
 		self.code = []
@@ -22,33 +22,63 @@ class File:
 		""" Init the newline-cursor in the Compiled buffer. """
 		self.output.options['modifiable'] = True
 		del self.output[:]
-		self.windowsManager.commands('__Compiled__', ["normal i PR"])
+		self.drawNewlineCursor(False)
 		self.output.options['modifiable'] = False
 		self.editNewLine = False
 		# We backtrack every chunks
 		self.chunks = self.chunks[:- self.coqManager.rewind(len(self.chunks))]
+
+	def drawNewlineCursor(self, newLine):
+		if newLine:
+			self.windowsManager.commands('__Compiled__', ["normal G$a Dt"])
+		else:
+			self.windowsManager.commands('__Compiled__', ["normal G$a PR"])
 
 	def next(self):
 		nextChunk = self.windowsManager.input.getChunk(self.input, (0, 0))
 		if nextChunk :
 			if self.coqManager.sendChunk(nextChunk[0]):
 				if self.editNewLine:
-					chunkStart = (0, textCursorPos(self.output)[1] + 1)
+					chunkStart = (0, textCursorPos(self.output)[1] + 1, 2)
 				else:
 					chunkStart = textCursorPos(self.output, diffX = 3) # diffX=2 to ignore the newline-cursor
+					chunkStart = (chunkStart[0], chunkStart[1], 0)
 				chunk = textCut(self.input, (0, 0, 2), nextChunk[1])
 				self.output.options['modifiable'] = True
 				# Remove the last newline-cursor
 				self.windowsManager.commands('__Compiled__', ["normal G$a"])
-				textConcat(self.output, chunk, self.editNewLine)
+				textAppend(self.output, chunk, self.editNewLine)
 				self.editNewLine = nextChunk[2]
 				chunkEnd = textCursorPos(self.output)
 				if self.editNewLine:
-					self.windowsManager.commands('__Compiled__', ["normal G$a Dt"])
+					self.drawNewlineCursor(True)
+					chunkEnd = (chunkEnd[0] + 1, chunkEnd[1], 1)
 				else:
-					self.windowsManager.commands('__Compiled__', ["normal G$a PR"])
+					self.drawNewlineCursor(False)
+					chunkEnd = (chunkEnd[0] + 1, chunkEnd[1], 0)
 				self.output.options['modifiable'] = False
-				self.chunks.append((chunkStart, chunkEnd))
+				self.chunks.append((chunkStart, chunkEnd, self.editNewLine))
+
+	def prev(self):
+		""" Backtrack of one chunk """
+		if len(self.chunks) <= 0:
+			print("No chunk to backtrack !")
+			return None
+		actualRewind = self.coqManager.rewind(1)
+		if actualRewind == 1:
+			self.output.options['modifiable'] = True
+			# Remove the last newline-cursor
+			self.windowsManager.commands('__Compiled__', ["normal G$a"])
+			lastChunk = self.chunks[-1]
+			chunk = textCut(self.output, lastChunk[0], lastChunk[1])
+			textPrepend(self.input, chunk, lastChunk[2])
+			self.chunks.pop()
+			if len(self.chunks) == 0:
+				self.editNewLine = False
+			else:
+				self.editNewLine = self.chunks[-1][2]
+			self.drawNewlineCursor(self.editNewLine)
+			self.output.options['modifiable'] = False
 
 	def write(self, filename):
 		try:
