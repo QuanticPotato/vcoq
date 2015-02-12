@@ -30,4 +30,12 @@ This plugin can be used as a bundle, with the [pathogen plugin][1]. Hence, you j
 	cd ~/.vim/bundle
 	git clone https://github.com/Choups314/vcoq.git
 
+
+Using
+=====
+
+First of all, launch the plugin with <F9>.  
+Then you can open a file with ```:O filename``` and write the current file with ```:W filename```. (The classical commands :w and :e will not work in the plugin)
+To send a chunk to the coqtop process, use the <Ctrl+j> map. You can also backtrack the last chunk with <Ctrl+l>
+
 [1]:https://github.com/tpope/vim-pathogen
